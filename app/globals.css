@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: Inter, system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-bone text-text-charcoal;
+  }
+}
+
+@layer components {
+  .mise-input {
+    @apply bg-butcher-paper border border-outline-gray rounded-mise px-4 py-3 
+           placeholder:text-helper-text text-body focus:outline-none 
+           focus:ring-2 focus:ring-olive-oil-gold/30 focus:border-olive-oil-gold
+           shadow-mise-inset transition-all duration-200;
+  }
+  
+  .mise-chip {
+    @apply bg-butcher-paper border border-outline-gray rounded-chip px-3 py-2 
+           text-chip text-text-charcoal cursor-pointer transition-all duration-150
+           hover:bg-outline-gray/20 font-inter;
+  }
+  
+  .mise-chip-selected {
+    @apply bg-olive-oil-gold text-cast-iron border-olive-oil-gold;
+  }
+  
+  .mise-button-primary {
+    @apply bg-olive-oil-gold text-cast-iron px-6 py-3 rounded-mise 
+           font-inter font-medium text-body hover:bg-olive-oil-gold/90 
+           transition-all duration-150 shadow-mise;
+  }
+  
+  .mise-button-secondary {
+    @apply bg-butcher-paper text-text-charcoal border border-outline-gray 
+           px-6 py-3 rounded-mise font-inter font-medium text-body 
+           hover:bg-outline-gray/20 transition-all duration-150;
+  }
+  
+  .mise-card {
+    @apply bg-butcher-paper border border-outline-gray rounded-mise p-6 shadow-mise;
+  }
+  
+  .mise-sidebar-link {
+    @apply text-helper-text hover:text-text-charcoal transition-colors duration-150 
+           text-sm font-inter;
+  }
+}
