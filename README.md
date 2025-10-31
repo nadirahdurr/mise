@@ -139,9 +139,9 @@ OPENAI_API_KEY=your_openai_api_key_here
 SUPABASE_URL=your_supabase_url_here
 SUPABASE_ANON_KEY=your_supabase_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
+
+> **🔒 Security Note**: This app uses server-side only environment variables (without `NEXT_PUBLIC_` prefix) to keep your Supabase credentials secure and never expose them to client-side JavaScript. All database operations are handled server-side for maximum security.
 
 ### Database Setup
 
@@ -430,8 +430,8 @@ npm run setup        # Database setup helper
 OPENAI_API_KEY=your_openai_api_key_here
 
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Optional: Development settings

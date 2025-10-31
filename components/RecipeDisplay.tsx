@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, BookOpen, Save, Clock, Users } from "lucide-react";
+import { ArrowLeft, Clock, Users } from "lucide-react";
 import { toast } from "react-hot-toast";
+import SaveRecipeButton from "./SaveRecipeButton";
 
 interface Recipe {
   id: string;
@@ -45,8 +46,7 @@ export default function RecipeDisplay({
   recipe,
   onStartOver,
 }: RecipeDisplayProps) {
-  const [isSaving, setIsSaving] = useState(false);
-  const [showCookbookModal, setShowCookbookModal] = useState(false);
+
 
   // Safety check for recipe data
   if (!recipe) {
@@ -62,33 +62,7 @@ export default function RecipeDisplay({
     );
   }
 
-  const handleSaveRecipe = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch("/api/recipes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(recipe),
-      });
 
-      if (!response.ok) {
-        throw new Error("Failed to save recipe");
-      }
-
-      toast.success("Recipe saved!");
-    } catch (error) {
-      toast.error("Failed to save recipe");
-      console.error("Save recipe error:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleAddToCookbook = () => {
-    setShowCookbookModal(true);
-  };
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-up">
@@ -103,22 +77,22 @@ export default function RecipeDisplay({
         </button>
 
         <div className="flex gap-3">
-          <button
-            onClick={handleSaveRecipe}
-            disabled={isSaving}
-            className="mise-button-secondary flex items-center gap-2 disabled:opacity-50"
-          >
-            <Save size={16} />
-            {isSaving ? "Saving..." : "Save Recipe"}
-          </button>
-
-          <button
-            onClick={handleAddToCookbook}
-            className="mise-button-primary flex items-center gap-2"
-          >
-            <BookOpen size={16} />
-            Add to Cookbook
-          </button>
+          <SaveRecipeButton 
+            recipe={{
+              id: recipe.id,
+              title: recipe.title,
+              description: recipe.description,
+              prep_time: recipe.prep_time,
+              cook_time: recipe.cook_time,
+              servings: recipe.servings,
+              difficulty: recipe.difficulty,
+              ingredients: recipe.ingredients || [],
+              instructions: recipe.instructions || [],
+              image_url: recipe.image_url,
+              cuisine_tags: recipe.cuisine_tags || [],
+              tips: recipe.tips
+            }} 
+          />
         </div>
       </div>
 
@@ -256,36 +230,7 @@ export default function RecipeDisplay({
         </div>
       </div>
 
-      {/* Cookbook Modal would go here */}
-      {showCookbookModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="mise-card w-full max-w-md">
-            <h3 className="font-spectral text-lg text-text-charcoal mb-4">
-              Add to Cookbook
-            </h3>
-            <p className="text-helper-text text-sm mb-4">
-              Choose a cookbook or create a new one.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCookbookModal(false)}
-                className="mise-button-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowCookbookModal(false);
-                  toast.success("Added to cookbook!");
-                }}
-                className="mise-button-primary flex-1"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
