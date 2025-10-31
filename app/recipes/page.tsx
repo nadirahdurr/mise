@@ -1,18 +1,82 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Clock, Users, Search, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import { Recipe } from "@/lib/supabase";
 import Link from "next/link";
 import { RecipeListSkeleton } from "@/components/Skeletons";
-import { useRecipeData, useRecipeSearch, useRecipeOperations } from "@/hooks/useOptimizedData";
+import {
+  useRecipeData,
+  useRecipeSearch,
+  useRecipeOperations,
+} from "@/hooks/useOptimizedData";
+import InfiniteScroll, {
+  RecipeLoadingIndicator,
+} from "@/components/InfiniteScroll";
 
 export default function RecipesPage() {
-  const { recipes, isLoading } = useRecipeData();
-  const { searchTerm, filteredRecipes, setSearchTerm } = useRecipeSearch();
+  const {
+    recipes,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    total,
+    loadMore,
+    refetch,
+  } = useRecipeData();
+  const { searchTerm, setSearchTerm } = useRecipeSearch();
   const { deleteRecipe } = useRecipeOperations();
+
+  // Local search state for debouncing
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Debounced search effect
+  useEffect(() => {
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout
+    searchTimeoutRef.current = setTimeout(() => {
+      if (localSearchTerm !== searchTerm) {
+        setSearchTerm(localSearchTerm);
+      }
+    }, 500); // 500ms debounce
+
+    // Cleanup
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [localSearchTerm, searchTerm, setSearchTerm]);
+
+  // Refresh data when page becomes visible (user navigates back)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Force refresh when user returns to the page
+      refetch(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible - force refresh
+        refetch(true);
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [refetch]);
 
   const handleDeleteRecipe = async (deletedRecipeId: string) => {
     try {
@@ -43,16 +107,16 @@ export default function RecipesPage() {
               <input
                 type="text"
                 placeholder="Search recipes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={localSearchTerm}
+                onChange={(e) => setLocalSearchTerm(e.target.value)}
                 className="mise-input pl-10"
               />
             </div>
           </div>
 
-          {isLoading ? (
+          {isLoading && recipes.length === 0 ? (
             <RecipeListSkeleton />
-          ) : filteredRecipes.length === 0 ? (
+          ) : recipes.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-helper-text text-body mb-4">
                 {searchTerm
@@ -64,15 +128,22 @@ export default function RecipesPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRecipes.map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  onDelete={handleDeleteRecipe}
-                />
-              ))}
-            </div>
+            <InfiniteScroll
+              hasMore={hasMore && !searchTerm} // Disable infinite scroll during search
+              isLoading={isLoadingMore}
+              onLoadMore={loadMore}
+              loadingComponent={<RecipeLoadingIndicator />}
+            >
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recipes.map((recipe) => (
+                  <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    onDelete={handleDeleteRecipe}
+                  />
+                ))}
+              </div>
+            </InfiniteScroll>
           )}
         </div>
       </main>
@@ -104,6 +175,7 @@ function RecipeCard({
       setShowDeleteConfirm(false);
     } catch (error) {
       console.error("Delete recipe error:", error);
+      // Error is already handled by the parent component with toast
     } finally {
       setIsDeleting(false);
     }

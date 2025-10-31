@@ -52,12 +52,28 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const limit = parseInt(searchParams.get("limit") || "12");
     const offset = parseInt(searchParams.get("offset") || "0");
+    const search = searchParams.get("search") || "";
 
-    const { data, error } = await supabase
+    // Base query
+    let query = supabase
       .from("recipes")
-      .select("id, title, description, prep_time, cook_time, servings, difficulty, image_url, cuisine_tags, created_at")
+      .select(
+        "id, title, description, prep_time, cook_time, servings, difficulty, image_url, cuisine_tags, created_at",
+        { count: "exact" }
+      );
+
+    // Add search filter if provided
+    if (search.trim()) {
+      const searchTerm = `%${search.toLowerCase()}%`;
+      query = query.or(
+        `title.ilike.${searchTerm},description.ilike.${searchTerm},cuisine_tags.cs.{${search}}`
+      );
+    }
+
+    // Apply pagination and ordering
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -69,7 +85,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ recipes: data });
+    return NextResponse.json({
+      recipes: data,
+      pagination: {
+        total: count || 0,
+        limit,
+        offset,
+        hasMore: (count || 0) > offset + limit,
+      },
+    });
   } catch (error) {
     console.error("Fetch recipes error:", error);
     return NextResponse.json(

@@ -7,7 +7,13 @@ import { toast } from "react-hot-toast";
 import Link from "next/link";
 import CookbookCustomizationModal from "@/components/CookbookCustomizationModal";
 import { CookbookListSkeleton } from "@/components/Skeletons";
-import { useCookbookData, useCookbookOperations } from "@/hooks/useOptimizedData";
+import {
+  useCookbookData,
+  useCookbookOperations,
+} from "@/hooks/useOptimizedData";
+import InfiniteScroll, {
+  CookbookLoadingIndicator,
+} from "@/components/InfiniteScroll";
 
 interface Cookbook {
   id: string;
@@ -23,7 +29,8 @@ interface Cookbook {
 
 export default function CookbooksPage() {
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
-  const { cookbooks, isLoading } = useCookbookData();
+  const { cookbooks, isLoading, isLoadingMore, hasMore, total, loadMore } =
+    useCookbookData();
   const { createCookbook, deleteCookbook } = useCookbookOperations();
 
   const handleCreateCookbook = async (cookbookData: Partial<Cookbook>) => {
@@ -65,9 +72,9 @@ export default function CookbooksPage() {
             </button>
           </div>
 
-          {isLoading ? (
+          {isLoading && cookbooks.length === 0 ? (
             <CookbookListSkeleton />
-          ) : (cookbooks || []).length === 0 ? (
+          ) : cookbooks.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="mx-auto text-helper-text mb-4" size={48} />
               <p className="text-helper-text text-body mb-4">
@@ -81,15 +88,22 @@ export default function CookbooksPage() {
               </button>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(cookbooks || []).map((cookbook) => (
-                <CookbookCard
-                  key={cookbook.id}
-                  cookbook={cookbook}
-                  onDelete={handleDeleteCookbook}
-                />
-              ))}
-            </div>
+            <InfiniteScroll
+              hasMore={hasMore}
+              isLoading={isLoadingMore}
+              onLoadMore={loadMore}
+              loadingComponent={<CookbookLoadingIndicator />}
+            >
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cookbooks.map((cookbook) => (
+                  <CookbookCard
+                    key={cookbook.id}
+                    cookbook={cookbook}
+                    onDelete={handleDeleteCookbook}
+                  />
+                ))}
+              </div>
+            </InfiniteScroll>
           )}
         </div>
       </main>

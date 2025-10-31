@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useDeleteRecipe } from "@/stores/recipeStore";
 
 interface DeleteRecipeButtonProps {
   recipeId: string;
@@ -17,19 +18,14 @@ export default function DeleteRecipeButton({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
+  const deleteRecipe = useDeleteRecipe();
 
   const handleDelete = async () => {
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/recipes/${recipeId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete recipe");
-      }
+      // Use the Zustand store delete function instead of direct API call
+      await deleteRecipe(recipeId);
 
       toast.success(`"${recipeName}" deleted successfully`);
 

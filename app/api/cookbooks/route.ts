@@ -9,13 +9,20 @@ const supabase = createClient(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const limit = parseInt(searchParams.get("limit") || "12");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Get cookbooks first (fast query)
-    const { data: cookbooks, error: cookbooksError } = await supabase
+    // Get cookbooks with count (fast query)
+    const {
+      data: cookbooks,
+      error: cookbooksError,
+      count,
+    } = await supabase
       .from("cookbooks")
-      .select("id, title, description, author, cover_color, cover_photo_url, cover_style, created_at")
+      .select(
+        "id, title, description, author, cover_color, cover_photo_url, cover_style, created_at",
+        { count: "exact" }
+      )
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -28,10 +35,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recipe counts in parallel (only if we have cookbooks)
-    let cookbooksWithCounts = cookbooks;
+    let cookbooksWithCounts = cookbooks || [];
     if (cookbooks && cookbooks.length > 0) {
-      const cookbookIds = cookbooks.map(cb => cb.id);
-      
+      const cookbookIds = cookbooks.map((cb) => cb.id);
+
       const { data: recipeCounts, error: countsError } = await supabase
         .from("cookbook_recipes")
         .select("cookbook_id")
@@ -44,14 +51,22 @@ export async function GET(request: NextRequest) {
           return acc;
         }, {} as Record<string, number>);
 
-        cookbooksWithCounts = cookbooks.map(cookbook => ({
+        cookbooksWithCounts = cookbooks.map((cookbook) => ({
           ...cookbook,
-          recipe_count: countMap[cookbook.id] || 0
+          recipe_count: countMap[cookbook.id] || 0,
         }));
       }
     }
 
-    return NextResponse.json({ cookbooks: cookbooksWithCounts });
+    return NextResponse.json({
+      cookbooks: cookbooksWithCounts,
+      pagination: {
+        total: count || 0,
+        limit,
+        offset,
+        hasMore: (count || 0) > offset + limit,
+      },
+    });
   } catch (error) {
     console.error("Fetch cookbooks error:", error);
     return NextResponse.json(
