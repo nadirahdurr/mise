@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { Clock, Zap, CheckCircle, ChefHat } from 'lucide-react';
+import React, { useState } from "react";
+import { Clock, Zap, CheckCircle, ChefHat } from "lucide-react";
 
 interface RecipeGenerationProgressProps {
   isGenerating: boolean;
-  progress: 'idle' | 'processing' | 'saving' | 'complete';
+  progress: "idle" | "processing" | "saving" | "complete";
   estimatedTime?: number;
 }
 
-export default function RecipeGenerationProgress({ 
-  isGenerating, 
-  progress, 
-  estimatedTime = 8000 
+export default function RecipeGenerationProgress({
+  isGenerating,
+  progress,
+  estimatedTime = 8000,
 }: RecipeGenerationProgressProps) {
   const [elapsedTime, setElapsedTime] = useState(0);
 
@@ -31,24 +31,26 @@ export default function RecipeGenerationProgress({
 
   const getProgressMessage = () => {
     switch (progress) {
-      case 'processing':
-        return 'Analyzing your ingredients and crafting something delicious...';
-      case 'saving':
-        return 'Adding your new creation to the cookbook...';
-      case 'complete':
-        return 'Your recipe is ready to cook!';
+      case "processing":
+        return "Analyzing your ingredients and crafting something delicious...";
+      case "saving":
+        return "Adding your new creation to the cookbook...";
+      case "complete":
+        return "Your recipe is ready to cook!";
       default:
-        return 'Preparing your mise en place...';
+        return "Preparing your mise en place...";
     }
   };
 
   const getProgressIcon = () => {
     switch (progress) {
-      case 'processing':
-        return <ChefHat className="w-6 h-6 text-olive-oil-gold animate-pulse" />;
-      case 'saving':
+      case "processing":
+        return (
+          <ChefHat className="w-6 h-6 text-olive-oil-gold animate-pulse" />
+        );
+      case "saving":
         return <Clock className="w-6 h-6 text-herb-green animate-spin" />;
-      case 'complete':
+      case "complete":
         return <CheckCircle className="w-6 h-6 text-herb-green" />;
       default:
         return <Clock className="w-6 h-6 text-text-charcoal/60" />;
@@ -62,16 +64,16 @@ export default function RecipeGenerationProgress({
         <div className="mb-8 inline-flex items-center justify-center w-16 h-16 bg-butcher-paper rounded-full">
           {getProgressIcon()}
         </div>
-        
+
         {/* Title using brand typography */}
         <h3 className="font-spectral text-xl font-medium text-text-charcoal mb-6">
           Creating Your Recipe
         </h3>
-        
+
         {/* Progress bar with brand colors */}
         <div className="mb-6">
           <div className="w-full bg-butcher-paper rounded-full h-2 overflow-hidden">
-            <div 
+            <div
               className="bg-gradient-to-r from-herb-green to-olive-oil h-2 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
@@ -80,16 +82,17 @@ export default function RecipeGenerationProgress({
             {(elapsedTime / 1000).toFixed(1)}s elapsed
           </p>
         </div>
-        
+
         {/* Message with brand styling */}
         <p className="text-text-charcoal/80 text-sm font-inter leading-relaxed">
           {getProgressMessage()}
         </p>
-        
+
         {/* Tip with subtle styling */}
         <div className="mt-8 px-4 py-3 bg-butcher-paper rounded-lg">
           <p className="text-xs text-text-charcoal/60 font-inter">
-            🍳 <span className="font-medium">Chef's tip:</span> Recipe images are being prepared and will appear shortly
+            🍳 <span className="font-medium">Chef's tip:</span> Recipe images
+            are being prepared and will appear shortly
           </p>
         </div>
       </div>

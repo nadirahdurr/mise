@@ -16,7 +16,9 @@ export default function MainInterface() {
   const [letMiseDecide, setLetMiseDecide] = useState(false);
   const [currentInputValue, setCurrentInputValue] = useState("");
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [generationProgress, setGenerationProgress] = useState<'idle' | 'processing' | 'saving' | 'complete'>('idle');
+  const [generationProgress, setGenerationProgress] = useState<
+    "idle" | "processing" | "saving" | "complete"
+  >("idle");
 
   const handleAddIngredient = (ingredient: string) => {
     if (ingredient && !ingredients.includes(ingredient)) {
@@ -66,8 +68,8 @@ export default function MainInterface() {
         );
         formData.append("letMiseDecide", letMiseDecide.toString());
 
-        setGenerationProgress('processing');
-        
+        setGenerationProgress("processing");
+
         response = await fetch("/api/generate-recipe", {
           method: "POST",
           body: formData,
@@ -77,8 +79,8 @@ export default function MainInterface() {
         const ingredientsText = currentInputValue.trim();
         const finalIngredients = [ingredientsText];
 
-        setGenerationProgress('processing');
-        
+        setGenerationProgress("processing");
+
         response = await fetch("/api/generate-recipe", {
           method: "POST",
           headers: {
@@ -98,24 +100,26 @@ export default function MainInterface() {
         throw new Error(errorData.message || "Failed to generate recipe");
       }
 
-      setGenerationProgress('saving');
-      
-      setGenerationProgress('saving');
+      setGenerationProgress("saving");
+
+      setGenerationProgress("saving");
       const data = await response.json();
-      
+
       // Extract the recipe from the response structure
       const recipe = data.recipe || data;
       setGeneratedRecipe(recipe);
-      setGenerationProgress('complete');
-      
+      setGenerationProgress("complete");
+
       // Show generation time if available
       const generationTime = data.generation_time_ms;
       if (generationTime) {
-        toast.success(`Recipe generated in ${(generationTime / 1000).toFixed(1)}s!`);
+        toast.success(
+          `Recipe generated in ${(generationTime / 1000).toFixed(1)}s!`
+        );
       } else {
         toast.success("Recipe generated!");
       }
-      
+
       // Show tip about images if they're being generated
       if (!recipe.image_url) {
         toast("🖼️ Recipe image is being generated and will appear shortly!", {
@@ -130,7 +134,7 @@ export default function MainInterface() {
       console.error("Recipe generation error:", error);
     } finally {
       setIsGenerating(false);
-      setGenerationProgress('idle');
+      setGenerationProgress("idle");
     }
   };
 
@@ -277,14 +281,12 @@ export default function MainInterface() {
           <p className="text-helper-text text-xs mt-2">
             Add ingredients and/or upload a photo to get started
           </p>
-          
-
         </div>
       </div>
-      
+
       {/* Progress Modal */}
-      <RecipeGenerationProgress 
-        isGenerating={isGenerating} 
+      <RecipeGenerationProgress
+        isGenerating={isGenerating}
         progress={generationProgress}
         estimatedTime={6000} // 6 seconds estimated time
       />

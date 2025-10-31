@@ -46,8 +46,6 @@ export default function RecipeDisplay({
   recipe,
   onStartOver,
 }: RecipeDisplayProps) {
-
-
   // Safety check for recipe data
   if (!recipe) {
     return (
@@ -62,8 +60,6 @@ export default function RecipeDisplay({
     );
   }
 
-
-
   return (
     <div className="max-w-4xl mx-auto animate-fade-up">
       {/* Header */}
@@ -77,7 +73,7 @@ export default function RecipeDisplay({
         </button>
 
         <div className="flex gap-3">
-          <SaveRecipeButton 
+          <SaveRecipeButton
             recipe={{
               id: recipe.id,
               title: recipe.title,
@@ -90,8 +86,8 @@ export default function RecipeDisplay({
               instructions: recipe.instructions || [],
               image_url: recipe.image_url,
               cuisine_tags: recipe.cuisine_tags || [],
-              tips: recipe.tips
-            }} 
+              tips: recipe.tips,
+            }}
           />
         </div>
       </div>
@@ -229,8 +225,6 @@ export default function RecipeDisplay({
           )}
         </div>
       </div>
-
-
     </div>
   );
 }
