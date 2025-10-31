@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("recipes")
-      .select("*")
+      .select("id, title, description, prep_time, cook_time, servings, difficulty, image_url, cuisine_tags, created_at")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 

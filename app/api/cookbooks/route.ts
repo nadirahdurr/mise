@@ -12,34 +12,46 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Get cookbooks with recipe count
-    const { data, error } = await supabase
+    // Get cookbooks first (fast query)
+    const { data: cookbooks, error: cookbooksError } = await supabase
       .from("cookbooks")
-      .select(
-        `
-        *,
-        cookbook_recipes(count)
-      `
-      )
+      .select("id, title, description, author, cover_color, cover_photo_url, cover_style, created_at")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) {
-      console.error("Supabase error:", error);
+    if (cookbooksError) {
+      console.error("Supabase error:", cookbooksError);
       return NextResponse.json(
         { error: "Failed to fetch cookbooks" },
         { status: 500 }
       );
     }
 
-    // Transform the data to include recipe count
-    const cookbooks = data.map((cookbook) => ({
-      ...cookbook,
-      recipe_count: cookbook.cookbook_recipes?.[0]?.count || 0,
-      cookbook_recipes: undefined, // Remove the raw count data
-    }));
+    // Get recipe counts in parallel (only if we have cookbooks)
+    let cookbooksWithCounts = cookbooks;
+    if (cookbooks && cookbooks.length > 0) {
+      const cookbookIds = cookbooks.map(cb => cb.id);
+      
+      const { data: recipeCounts, error: countsError } = await supabase
+        .from("cookbook_recipes")
+        .select("cookbook_id")
+        .in("cookbook_id", cookbookIds);
 
-    return NextResponse.json({ cookbooks });
+      if (!countsError && recipeCounts) {
+        // Count recipes per cookbook
+        const countMap = recipeCounts.reduce((acc, item) => {
+          acc[item.cookbook_id] = (acc[item.cookbook_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        cookbooksWithCounts = cookbooks.map(cookbook => ({
+          ...cookbook,
+          recipe_count: countMap[cookbook.id] || 0
+        }));
+      }
+    }
+
+    return NextResponse.json({ cookbooks: cookbooksWithCounts });
   } catch (error) {
     console.error("Fetch cookbooks error:", error);
     return NextResponse.json(

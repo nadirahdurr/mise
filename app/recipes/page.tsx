@@ -1,49 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Clock, Users, Search, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import { Recipe } from "@/lib/supabase";
 import Link from "next/link";
+import { RecipeListSkeleton } from "@/components/Skeletons";
+import { useRecipeData, useRecipeSearch, useRecipeOperations } from "@/hooks/useOptimizedData";
 
 export default function RecipesPage() {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const { recipes, isLoading } = useRecipeData();
+  const { searchTerm, filteredRecipes, setSearchTerm } = useRecipeSearch();
+  const { deleteRecipe } = useRecipeOperations();
 
-  useEffect(() => {
-    fetchRecipes();
-  }, []);
-
-  const fetchRecipes = async () => {
+  const handleDeleteRecipe = async (deletedRecipeId: string) => {
     try {
-      const response = await fetch("/api/recipes");
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched recipes:", data.recipes?.length || 0, "recipes");
-        setRecipes(data.recipes || []);
-      } else {
-        console.error("Failed to fetch recipes:", response.status);
-      }
+      await deleteRecipe(deletedRecipeId);
+      toast.success("Recipe deleted successfully");
     } catch (error) {
-      console.error("Error fetching recipes:", error);
-    } finally {
-      setLoading(false);
+      console.error("Delete recipe error:", error);
+      toast.error("Failed to delete recipe");
     }
-  };
-
-  const filteredRecipes = recipes.filter(
-    (recipe) =>
-      recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.cuisine_tags.some((tag) =>
-        tag.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-  );
-
-  const handleDeleteRecipe = (deletedRecipeId: string) => {
-    setRecipes(recipes.filter((recipe) => recipe.id !== deletedRecipeId));
   };
 
   return (
@@ -72,10 +50,8 @@ export default function RecipesPage() {
             </div>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-olive-oil-gold border-t-transparent rounded-full animate-spin" />
-            </div>
+          {isLoading ? (
+            <RecipeListSkeleton />
           ) : filteredRecipes.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-helper-text text-body mb-4">
@@ -109,7 +85,7 @@ function RecipeCard({
   onDelete,
 }: {
   recipe: Recipe;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -124,25 +100,12 @@ function RecipeCard({
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/recipes/${recipe.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete recipe");
-      }
-
-      toast.success(`"${recipe.title}" deleted successfully`);
-      onDelete(recipe.id);
+      await onDelete(recipe.id);
+      setShowDeleteConfirm(false);
     } catch (error) {
       console.error("Delete recipe error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error(`Failed to delete recipe: ${errorMessage}`);
     } finally {
       setIsDeleting(false);
-      setShowDeleteConfirm(false);
     }
   };
 

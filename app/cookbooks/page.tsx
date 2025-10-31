@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, BookOpen, Clock, Users, Trash2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import CookbookCustomizationModal from "@/components/CookbookCustomizationModal";
+import { CookbookListSkeleton } from "@/components/Skeletons";
+import { useCookbookData, useCookbookOperations } from "@/hooks/useOptimizedData";
 
 interface Cookbook {
   id: string;
@@ -20,56 +22,29 @@ interface Cookbook {
 }
 
 export default function CookbooksPage() {
-  const [cookbooks, setCookbooks] = useState<Cookbook[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
-
-  useEffect(() => {
-    fetchCookbooks();
-  }, []);
-
-  const fetchCookbooks = async () => {
-    try {
-      const response = await fetch("/api/cookbooks");
-      if (response.ok) {
-        const data = await response.json();
-        setCookbooks(data.cookbooks);
-      }
-    } catch (error) {
-      console.error("Error fetching cookbooks:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { cookbooks, isLoading } = useCookbookData();
+  const { createCookbook, deleteCookbook } = useCookbookOperations();
 
   const handleCreateCookbook = async (cookbookData: Partial<Cookbook>) => {
     try {
-      const response = await fetch("/api/cookbooks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cookbookData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCookbooks([data.cookbook, ...cookbooks]);
-        setShowCustomizationModal(false);
-        toast.success("Cookbook created!");
-      } else {
-        toast.error("Failed to create cookbook");
-      }
+      await createCookbook(cookbookData);
+      setShowCustomizationModal(false);
+      toast.success("Cookbook created!");
     } catch (error) {
       toast.error("Failed to create cookbook");
       console.error("Create cookbook error:", error);
     }
   };
 
-  const handleDeleteCookbook = (deletedCookbookId: string) => {
-    setCookbooks(
-      cookbooks.filter((cookbook) => cookbook.id !== deletedCookbookId)
-    );
+  const handleDeleteCookbook = async (deletedCookbookId: string) => {
+    try {
+      await deleteCookbook(deletedCookbookId);
+      toast.success("Cookbook deleted successfully");
+    } catch (error) {
+      console.error("Delete cookbook error:", error);
+      toast.error("Failed to delete cookbook");
+    }
   };
 
   return (
@@ -90,11 +65,9 @@ export default function CookbooksPage() {
             </button>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-olive-oil-gold border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : cookbooks.length === 0 ? (
+          {isLoading ? (
+            <CookbookListSkeleton />
+          ) : (cookbooks || []).length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="mx-auto text-helper-text mb-4" size={48} />
               <p className="text-helper-text text-body mb-4">
@@ -109,7 +82,7 @@ export default function CookbooksPage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cookbooks.map((cookbook) => (
+              {(cookbooks || []).map((cookbook) => (
                 <CookbookCard
                   key={cookbook.id}
                   cookbook={cookbook}
@@ -138,7 +111,7 @@ function CookbookCard({
   onDelete,
 }: {
   cookbook: Cookbook;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -153,25 +126,12 @@ function CookbookCard({
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/cookbooks/${cookbook.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete cookbook");
-      }
-
-      toast.success(`"${cookbook.title}" deleted successfully`);
-      onDelete(cookbook.id);
+      await onDelete(cookbook.id);
+      setShowDeleteConfirm(false);
     } catch (error) {
       console.error("Delete cookbook error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error(`Failed to delete cookbook: ${errorMessage}`);
     } finally {
       setIsDeleting(false);
-      setShowDeleteConfirm(false);
     }
   };
 
